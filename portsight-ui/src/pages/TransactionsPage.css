@@ -1,0 +1,240 @@
+.transactions-page {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────────*/
+.tx-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.tx-refresh {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+}
+
+/* ── Portfolio Selector ───────────────────────────────────────────────────────*/
+.tx-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* ── Filters ─────────────────────────────────────────────────────────────────*/
+.tx-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--border-radius-lg);
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.tx-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tx-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tx-select,
+.tx-date {
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.875rem;
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  min-width: 140px;
+}
+
+.tx-select:focus,
+.tx-date:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 85, 255, 0.1);
+}
+
+.tx-reset {
+  font-size: 0.82rem;
+  padding: 0.5rem 1rem;
+  align-self: flex-end;
+}
+
+/* ── Summary Bar ─────────────────────────────────────────────────────────────*/
+.tx-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.tx-summary-amount {
+  color: var(--text-primary);
+}
+
+/* ── States ──────────────────────────────────────────────────────────────────*/
+.tx-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.tx-error {
+  color: #FF3B30;
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────────*/
+.tx-table-wrap {
+  border-radius: var(--border-radius-lg);
+  overflow: auto;
+  margin-bottom: 1rem;
+}
+
+.tx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tx-table th {
+  text-align: left;
+  padding: 0.875rem 1rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.tx-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.tx-table tr:last-child td {
+  border-bottom: none;
+}
+
+.tx-table tr:hover td {
+  background: var(--bg-main);
+}
+
+.tx-date-cell {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.tx-asset-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tx-ticker {
+  background: var(--bg-main);
+  color: var(--primary-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.tx-name {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.tx-secondary {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.tx-type-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tx-total {
+  font-weight: 600;
+}
+
+.tx-status-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(0, 200, 83, 0.12);
+  color: #00C853;
+}
+
+/* ── Pagination ───────────────────────────────────────────────────────────────*/
+.tx-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 1rem 0;
+}
+
+.tx-pg-btn {
+  font-size: 0.875rem;
+  padding: 0.45rem 1rem;
+}
+
+.tx-pg-info {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* ── Spin ────────────────────────────────────────────────────────────────────*/
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}

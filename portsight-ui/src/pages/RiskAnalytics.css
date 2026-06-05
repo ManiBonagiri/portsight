@@ -1,0 +1,343 @@
+.risk-page {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.risk-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+/* Risk Banner */
+.risk-banner {
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(0, 85, 255, 0.03) 0%, rgba(99, 102, 241, 0.03) 100%);
+}
+
+.risk-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.risk-score-circle {
+  position: relative;
+  display: inline-flex;
+}
+
+.risk-score-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.risk-banner-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.risk-banner-sub {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.risk-banner-metrics {
+  display: flex;
+  gap: 2rem;
+}
+
+.banner-metric {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Charts Grid */
+.risk-charts-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1.25rem;
+}
+
+/* Stress Testing */
+.stress-section {
+  padding: 1.5rem;
+}
+
+.stress-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.stress-scenario-card {
+  background: var(--bg-main);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 1.25rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stress-scenario-card:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  background: rgba(0, 85, 255, 0.03);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.stress-scenario-card.running {
+  border-color: var(--primary-color);
+  opacity: 0.7;
+}
+
+.stress-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.stress-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stress-severity {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.stress-run-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-top: 0.25rem;
+}
+
+.stress-loading {
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 999px;
+  animation: loadingPulse 1s ease-in-out infinite;
+  margin-top: 0.25rem;
+}
+
+.stress-result-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: var(--danger-bg);
+  color: var(--danger-color);
+}
+
+.stress-result-card {
+  margin-top: 1.5rem;
+  background: var(--bg-main);
+  border-radius: var(--border-radius-md);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border: 1px solid var(--border-color);
+  animation: slideUp 0.3s ease;
+}
+
+.stress-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stress-result-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.stress-result-val {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@media (max-width: 1024px) {
+  .risk-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stress-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .risk-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .stress-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Reuse from Dashboard patterns */
+.page-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.page-sub {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+.kpi-card {
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.kpi-body {
+  flex: 1;
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 0.4rem;
+}
+
+.kpi-sub {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem;
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dashboard-error {
+  padding: 2rem;
+  text-align: center;
+  color: var(--danger-color);
+  font-weight: 500;
+}
+
+.dashboard-empty {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
+}
+
+.portfolio-select {
+  appearance: none;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.45rem 2.25rem 0.45rem 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  min-width: 260px;
+}
+
+.portfolio-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.selector-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.selector-icon {
+  position: absolute;
+  right: 0.65rem;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+@media (max-width: 1200px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

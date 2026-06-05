@@ -1,0 +1,53 @@
+# System & IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Build artifacts (Java)
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/wrapper/
+.metadata/
+.classpath
+.project
+.settings/
+bin/
+dependency-reduced-pom.xml
+
+# Node & Frontend
+node_modules/
+dist/
+build/
+.eslintcache
+*.log
+.npm/
+.yarn/
+package-lock.json
+yarn.lock
+
+# Environment secrets
+.env
+.env.local
+.env.dev
+.env.test
+.env.prod
+*.key
+*.pem
+
+# Docker persistent data (bind mounts we will create)
+docker-data/
+postgres-data/
+redis-data/
+kafka-data/
+minio-data/
+prometheus-data/
+grafana-data/

@@ -1,0 +1,77 @@
+/* ========== Settings Page ========== */
+.settings-page {
+  padding: 2rem;
+  max-width: 640px;
+  margin: 0 auto;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  color: var(--text, #e0e0e0);
+}
+
+.icon-light {
+  color: #f59e0b;
+}
+
+.icon-dark {
+  color: #818cf8;
+}
+
+.btn-toggle {
+  padding: 0.45rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid var(--accent, #6c63ff);
+  background: transparent;
+  color: var(--accent, #6c63ff);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-toggle:hover {
+  background: var(--accent, #6c63ff);
+  color: #fff;
+}
+
+.btn-toggle.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  padding: 0.45rem 1.1rem;
+  border-radius: 8px;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
