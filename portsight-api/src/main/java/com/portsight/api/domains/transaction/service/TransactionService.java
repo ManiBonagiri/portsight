@@ -11,6 +11,7 @@ import com.portsight.api.domains.transaction.entity.Transaction;
 import com.portsight.api.domains.transaction.mapper.TransactionMapper;
 import com.portsight.api.domains.transaction.repository.TransactionRepository;
 import com.portsight.api.shared.exception.ResourceNotFoundException;
+import com.portsight.api.shared.outbox.OutboxEventHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,17 +33,20 @@ public class TransactionService {
     private final PortfolioRepository portfolioRepository;
     private final AssetRepository assetRepository;
     private final AssetMapper assetMapper;
+    private final OutboxEventHelper outboxEventHelper;
 
     public TransactionService(TransactionRepository transactionRepository,
-                              TransactionMapper transactionMapper,
-                              PortfolioRepository portfolioRepository,
-                              AssetRepository assetRepository,
-                              AssetMapper assetMapper) {
+            TransactionMapper transactionMapper,
+            PortfolioRepository portfolioRepository,
+            AssetRepository assetRepository,
+            AssetMapper assetMapper,
+            OutboxEventHelper outboxEventHelper) {
         this.transactionRepository = transactionRepository;
         this.transactionMapper = transactionMapper;
         this.portfolioRepository = portfolioRepository;
         this.assetRepository = assetRepository;
         this.assetMapper = assetMapper;
+        this.outboxEventHelper = outboxEventHelper;
     }
 
     @Transactional
@@ -57,10 +62,25 @@ public class TransactionService {
 
         Transaction transaction = transactionMapper.toEntity(request);
         transaction.setStatus("COMPLETED");
-        
+
         Transaction savedTransaction = transactionRepository.save(transaction);
-        
-        // TODO: Publish Kafka event 'transaction-recorded' to update holdings/cash asynchronously
+
+        // Publish transaction-created event via outbox
+        Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("transactionId", savedTransaction.getId().toString());
+        payload.put("portfolioId", savedTransaction.getPortfolioId().toString());
+        payload.put("type", savedTransaction.getType() != null ? savedTransaction.getType().name() : "");
+        payload.put("quantity", savedTransaction.getQuantity().toPlainString());
+        payload.put("price", savedTransaction.getPrice().toPlainString());
+        if (savedTransaction.getAssetId() != null) {
+            payload.put("assetId", savedTransaction.getAssetId().toString());
+        }
+
+        outboxEventHelper.publish(
+                "Transaction",
+                savedTransaction.getId().toString(),
+                "CREATED",
+                payload);
 
         return enrichTransactionResponse(savedTransaction);
     }
@@ -68,9 +88,7 @@ public class TransactionService {
     @Transactional(readOnly = true)
     public List<TransactionResponse> getPortfolioTransactions(UUID userId, UUID portfolioId) {
         log.info("Fetching transactions for portfolio: {}", portfolioId);
-        
         verifyPortfolioOwnership(userId, portfolioId);
-
         return transactionRepository.findByPortfolioIdOrderByCreatedAtDesc(portfolioId).stream()
                 .map(this::enrichTransactionResponse)
                 .collect(Collectors.toList());
@@ -79,10 +97,10 @@ public class TransactionService {
     @Transactional
     public TransactionResponse reverseTransaction(UUID userId, UUID transactionId) {
         log.info("Reversing transaction: {}", transactionId);
-        
+
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + transactionId));
-                
+
         verifyPortfolioOwnership(userId, transaction.getPortfolioId());
 
         if ("REVERSED".equals(transaction.getStatus())) {
@@ -91,9 +109,16 @@ public class TransactionService {
 
         transaction.setStatus("REVERSED");
         Transaction updatedTransaction = transactionRepository.save(transaction);
-        
-        // TODO: Publish Kafka event 'transaction-reversed'
-        
+
+        // Publish transaction-reversed event via outbox
+        outboxEventHelper.publish(
+                "Transaction",
+                updatedTransaction.getId().toString(),
+                "REVERSED",
+                Map.of(
+                        "transactionId", updatedTransaction.getId().toString(),
+                        "portfolioId", updatedTransaction.getPortfolioId().toString()));
+
         return enrichTransactionResponse(updatedTransaction);
     }
 
@@ -113,10 +138,8 @@ public class TransactionService {
                 response.setAsset(assetMapper.toResponse(asset));
             }
         }
-        
         BigDecimal total = transaction.getQuantity().multiply(transaction.getPrice());
         response.setTotalAmount(total);
-        
         return response;
     }
 }

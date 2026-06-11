@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,5 +44,15 @@ public class AnalyticsController {
         UUID userId = getUserId(principal);
         PerformanceResponse response = analyticsService.getPortfolioPerformance(userId, id);
         return ResponseEntity.ok(Map.of("success", true, "data", response));
+    }
+
+    @GetMapping("/snapshots/{id}")
+    public ResponseEntity<Map<String, Object>> getPortfolioGrowthHistory(
+            @AuthenticationPrincipal String principal,
+            @PathVariable UUID id) {
+
+        UUID userId = getUserId(principal);
+        List<Map<String, Object>> data = analyticsService.getPortfolioGrowthHistory(userId, id);
+        return ResponseEntity.ok(Map.of("success", true, "data", data));
     }
 }

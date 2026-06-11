@@ -7,12 +7,14 @@ import com.portsight.api.domains.portfolio.entity.Portfolio;
 import com.portsight.api.domains.portfolio.mapper.PortfolioMapper;
 import com.portsight.api.domains.portfolio.repository.PortfolioRepository;
 import com.portsight.api.shared.exception.ResourceNotFoundException;
+import com.portsight.api.shared.outbox.OutboxEventHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -23,10 +25,14 @@ public class PortfolioServiceImpl implements PortfolioService {
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioMapper portfolioMapper;
+    private final OutboxEventHelper outboxEventHelper;
 
-    public PortfolioServiceImpl(PortfolioRepository portfolioRepository, PortfolioMapper portfolioMapper) {
+    public PortfolioServiceImpl(PortfolioRepository portfolioRepository,
+            PortfolioMapper portfolioMapper,
+            OutboxEventHelper outboxEventHelper) {
         this.portfolioRepository = portfolioRepository;
         this.portfolioMapper = portfolioMapper;
+        this.outboxEventHelper = outboxEventHelper;
     }
 
     @Override
@@ -38,7 +44,23 @@ public class PortfolioServiceImpl implements PortfolioService {
         portfolio.setStatus("ACTIVE");
 
         Portfolio savedPortfolio = portfolioRepository.save(portfolio);
-        // TODO: Publish Kafka event 'portfolio-created'
+
+        // Publish portfolio-created event via outbox
+        outboxEventHelper.publish(
+                "Portfolio",
+                savedPortfolio.getId().toString(),
+                "CREATED",
+                Map.of(
+                        "portfolioId", savedPortfolio.getId().toString(),
+                        "userId", userId.toString(),
+                        "portfolioName", savedPortfolio.getPortfolioName(),
+                        "riskProfile", savedPortfolio.getRiskProfile() != null
+                                ? savedPortfolio.getRiskProfile().name()
+                                : "",
+                        "benchmark", savedPortfolio.getBenchmark() != null
+                                ? savedPortfolio.getBenchmark()
+                                : ""));
+
         return portfolioMapper.toResponse(savedPortfolio);
     }
 
@@ -92,7 +114,6 @@ public class PortfolioServiceImpl implements PortfolioService {
     private Portfolio findPortfolioOrThrow(UUID userId, UUID portfolioId) {
         Portfolio portfolio = portfolioRepository.findById(portfolioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found: " + portfolioId));
-
         if (!portfolio.getUserId().equals(userId)) {
             throw new ResourceNotFoundException("Portfolio not found: " + portfolioId);
         }

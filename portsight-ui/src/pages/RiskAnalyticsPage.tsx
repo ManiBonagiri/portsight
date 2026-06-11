@@ -1,21 +1,12 @@
 import { useState, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar
+  ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar,
+  ReferenceLine
 } from 'recharts';
-import { AlertTriangle, Shield, ArrowDownRight, ChevronDown, RefreshCw } from 'lucide-react';
-import { riskService, portfolioService, stressTestService } from '../services/api';
+import { AlertTriangle, Shield, ArrowDownRight, ChevronDown } from 'lucide-react';
+import { riskService, portfolioService, stressTestService, analyticsService } from '../services/api';
 import './RiskAnalytics.css';
-
-// ── Static placeholders (replaced in P4 with real snapshot data) ─────────────
-const RISK_HISTORY = [
-  { month: 'Jan', volatility: 11.2, beta: 1.1 },
-  { month: 'Feb', volatility: 13.5, beta: 1.3 },
-  { month: 'Mar', volatility: 10.8, beta: 1.0 },
-  { month: 'Apr', volatility: 14.2, beta: 1.4 },
-  { month: 'May', volatility: 11.9, beta: 1.2 },
-  { month: 'Jun', volatility: 12.5, beta: 1.24 },
-];
 
 const STRESS_SCENARIOS = [
   { key: 'MARKET_CRASH_20', label: 'Market Crash -20%', icon: '📉', severity: 'HIGH' },
@@ -50,6 +41,11 @@ interface StressResult {
   impactPercent: number;
 }
 
+interface ReturnPoint {
+  month: string;
+  returnPct: number;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatINR = (v: number) =>
   new Intl.NumberFormat('en-IN', {
@@ -58,13 +54,9 @@ const formatINR = (v: number) =>
 
 // Compute a 0–100 health score from real risk metrics
 function computeHealthScore(risk: Risk): number {
-  // Sharpe: higher = better (cap at 3.0 = 100)
   const sharpeScore = Math.min(Math.max(Number(risk.sharpeRatio) / 3.0, 0), 1) * 30;
-  // Volatility: lower = better (0% = 100, 50%+ = 0)
   const volScore = Math.max(1 - Number(risk.volatility) / 50, 0) * 30;
-  // Beta: closest to 1.0 = best, >2 or <0 = worst
   const betaScore = Math.max(1 - Math.abs(Number(risk.beta) - 1.0) / 2, 0) * 20;
-  // VaR: less negative = better (-20% = 0, 0% = 100)
   const varScore = Math.max(1 - Math.abs(Number(risk.var95)) / 20, 0) * 20;
   return Math.round(sharpeScore + volScore + betaScore + varScore);
 }
@@ -83,16 +75,27 @@ function healthColor(score: number): string {
   return '#9B1FE8';
 }
 
-// Build radar data from real metrics
 function buildRadarData(risk: Risk) {
   return [
     { metric: 'Sharpe Ratio', score: Math.round(Math.min(Number(risk.sharpeRatio) / 3 * 100, 100)) },
-    { metric: 'Diversification', score: 55 }, // static until P4
-    { metric: 'Liquidity', score: 88 }, // static until P4
+    { metric: 'Diversification', score: 55 },
+    { metric: 'Liquidity', score: 88 },
     { metric: 'Drawdown', score: Math.round(Math.max(1 - Math.abs(Number(risk.var95)) / 20, 0) * 100) },
     { metric: 'Beta Control', score: Math.round(Math.max(1 - Math.abs(Number(risk.beta) - 1) / 2, 0) * 100) },
     { metric: 'Consistency', score: Math.round(Math.max(1 - Number(risk.volatility) / 50, 0) * 100) },
   ];
+}
+
+// Derive month-over-month return % from snapshot values
+function buildReturnHistory(snapshots: { month: string; value: number }[]): ReturnPoint[] {
+  if (snapshots.length < 2) return [];
+  return snapshots.slice(1).map((point, i) => {
+    const prev = snapshots[i].value;
+    const returnPct = prev > 0
+      ? Math.round(((point.value - prev) / prev) * 10000) / 100  // 2 decimals
+      : 0;
+    return { month: point.month, returnPct };
+  });
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -100,6 +103,7 @@ export default function RiskAnalyticsPage() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [risk, setRisk] = useState<Risk | null>(null);
+  const [returnHistory, setReturnHistory] = useState<ReturnPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<StressResult | null>(null);
@@ -120,17 +124,40 @@ export default function RiskAnalyticsPage() {
       });
   }, []);
 
-  // Step 2 — fetch risk when portfolio selected
+  // Step 2 — fetch risk + snapshot history when portfolio selected
   useEffect(() => {
     if (!selectedId) return;
     setLoading(true);
     setError(null);
     setTestResult(null);
 
-    riskService.getRiskMetrics(selectedId)
-      .then(res => setRisk(res.data.data))
-      .catch(() => setError('Unable to load risk metrics.'))
-      .finally(() => setLoading(false));
+    const fetchAll = async () => {
+      // Risk — critical
+      try {
+        const rRes = await riskService.getRiskMetrics(selectedId);
+        setRisk(rRes.data.data);
+      } catch {
+        setError('Unable to load risk metrics.');
+        setLoading(false);
+        return;
+      }
+
+      // Snapshot history for return trend — non-critical
+      try {
+        const gRes = await analyticsService.getGrowthHistory(selectedId);
+        const raw: { month: string; value: number }[] = (gRes.data.data ?? []).map((p: any) => ({
+          month: p.month,
+          value: Number(p.value),
+        }));
+        setReturnHistory(buildReturnHistory(raw));
+      } catch {
+        setReturnHistory([]);
+      }
+
+      setLoading(false);
+    };
+
+    fetchAll();
   }, [selectedId]);
 
   // Stress test
@@ -151,9 +178,12 @@ export default function RiskAnalyticsPage() {
   const score = risk ? computeHealthScore(risk) : 0;
   const radarData = risk ? buildRadarData(risk) : [];
   const color = healthColor(score);
-
-  // Circumference for SVG circle = 2π × 34 ≈ 213.6
   const arcLength = (score / 100) * 213.6;
+
+  // Chart subtitle based on data availability
+  const trendSubtitle = returnHistory.length > 0
+    ? `${returnHistory[0].month} – ${returnHistory[returnHistory.length - 1].month} (real data)`
+    : 'Accumulating — grows with daily snapshots';
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) {
@@ -247,7 +277,7 @@ export default function RiskAnalyticsPage() {
         </div>
       </div>
 
-      {/* Risk Metrics Detail Row */}
+      {/* Risk Metrics KPI Row */}
       <div className="kpi-grid">
         <div className="kpi-card surface surface-float">
           <div className="kpi-body">
@@ -286,20 +316,41 @@ export default function RiskAnalyticsPage() {
         <div className="surface chart-card">
           <div className="chart-card-header">
             <div>
-              <div className="chart-title">Volatility Trend</div>
-              <div className="chart-subtitle">Monthly annualized volatility vs beta (simulated — P4)</div>
+              <div className="chart-title">Monthly Return Trend</div>
+              <div className="chart-subtitle">{trendSubtitle}</div>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={RISK_HISTORY} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F5" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ border: 'none', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontSize: '13px' }} />
-              <Bar dataKey="volatility" name="Volatility %" fill="#FF9500" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="beta" name="Beta" fill="#0055FF" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {returnHistory.length === 0 ? (
+            <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>
+              Snapshot data accumulates daily — check back tomorrow
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={returnHistory} barGap={4}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F5" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
+                <YAxis
+                  tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `${v}%`}
+                />
+                <Tooltip
+                  formatter={(v: number) => [`${v}%`, 'Monthly Return']}
+                  contentStyle={{ border: 'none', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontSize: '13px' }}
+                />
+                <ReferenceLine y={0} stroke="#E5E7EB" strokeWidth={1} />
+                <Bar
+                  dataKey="returnPct"
+                  name="Monthly Return %"
+                  radius={[4, 4, 0, 0]}
+                  fill="#0055FF"
+                  // Negative bars render in red, positive in blue
+                  label={false}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         <div className="surface chart-card">

@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
+import java.time.format.TextStyle;
 import java.util.*;
 
 @Slf4j
@@ -121,7 +121,6 @@ public class AnalyticsService {
         LocalDate today = LocalDate.now();
         LocalDate oneYear = today.minusYears(1);
 
-        // Build daily portfolio values over the past year
         List<Double> portfolioValues = buildDailyPortfolioValues(holdings, oneYear, today);
 
         if (portfolioValues.size() < 5) {
@@ -133,20 +132,17 @@ public class AnalyticsService {
         double endValue = portfolioValues.get(portfolioValues.size() - 1);
         int days = portfolioValues.size();
 
-        // Annual return = (end/start)^(252/days) - 1
         double annualReturn = 0.0;
         if (startValue > 0) {
             annualReturn = (Math.pow(endValue / startValue, 252.0 / days) - 1.0) * 100;
         }
 
-        // CAGR over available history
         double years = days / 252.0;
         double cagr = 0.0;
         if (startValue > 0 && years > 0) {
             cagr = (Math.pow(endValue / startValue, 1.0 / years) - 1.0) * 100;
         }
 
-        // Daily return = last day change
         double dailyReturn = 0.0;
         if (portfolioValues.size() >= 2) {
             double prev = portfolioValues.get(portfolioValues.size() - 2);
@@ -154,9 +150,8 @@ public class AnalyticsService {
                 dailyReturn = ((endValue - prev) / prev) * 100;
         }
 
-        // Monthly return — value 30 days ago
         double monthlyReturn = 0.0;
-        int monthIdx = Math.max(0, portfolioValues.size() - 22); // ~22 trading days
+        int monthIdx = Math.max(0, portfolioValues.size() - 22);
         double monthStart = portfolioValues.get(monthIdx);
         if (monthStart > 0) {
             monthlyReturn = ((endValue - monthStart) / monthStart) * 100;
@@ -168,6 +163,45 @@ public class AnalyticsService {
                 .annualReturn(bd(annualReturn))
                 .cagr(bd(cagr))
                 .build();
+    }
+
+    // ── Get portfolio growth history from snapshots (for Dashboard chart) ─────
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getPortfolioGrowthHistory(UUID userId, UUID portfolioId) {
+        verifyPortfolioOwnership(userId, portfolioId);
+
+        LocalDate to = LocalDate.now();
+        LocalDate from = to.minusMonths(12);
+
+        List<PortfolioSnapshot> snapshots = snapshotRepository
+                .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(
+                        portfolioId, from, to);
+
+        if (snapshots.isEmpty()) {
+            log.info("No snapshots found for portfolio: {} — returning empty growth history", portfolioId);
+            return Collections.emptyList();
+        }
+
+        // Group by month (YYYY-MM key), keep the last snapshot of each month
+        Map<String, PortfolioSnapshot> byMonth = new LinkedHashMap<>();
+        for (PortfolioSnapshot s : snapshots) {
+            String key = s.getSnapshotDate().getYear() + "-"
+                    + String.format("%02d", s.getSnapshotDate().getMonthValue());
+            byMonth.put(key, s); // last entry for this month wins (list is sorted asc)
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (PortfolioSnapshot s : byMonth.values()) {
+            Map<String, Object> point = new LinkedHashMap<>();
+            point.put("month", s.getSnapshotDate()
+                    .getMonth()
+                    .getDisplayName(TextStyle.SHORT, Locale.ENGLISH));
+            point.put("date", s.getSnapshotDate().toString());
+            point.put("value", s.getTotalValue());
+            result.add(point);
+        }
+
+        return result;
     }
 
     // ── Build daily portfolio value series from price history ─────────────────
@@ -191,7 +225,6 @@ public class AnalyticsService {
         if (priceByAssetDate.isEmpty())
             return Collections.emptyList();
 
-        // Collect all dates
         Set<LocalDate> allDates = new TreeSet<>();
         for (Map<LocalDate, Double> m : priceByAssetDate.values()) {
             allDates.addAll(m.keySet());

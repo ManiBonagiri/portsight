@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8080/api/v1' : '/api/v1'),
 });
 
 // ─── JWT interceptor ──────────────────────────────────────────────────────────
@@ -81,6 +81,8 @@ export const analyticsService = {
     api.get(`/analytics/portfolio/${portfolioId}`),
   getPerformance: (portfolioId: string) =>
     api.get(`/analytics/performance/${portfolioId}`),
+  getGrowthHistory: (portfolioId: string) =>
+    api.get(`/analytics/snapshots/${portfolioId}`),
 };
 
 // ─── Risk ─────────────────────────────────────────────────────────────────────
@@ -106,8 +108,12 @@ export const assetService = {
 export const reportService = {
   generate: (portfolioId: string, reportType: string) =>
     api.post('/reports/generate', { portfolioId, reportType }),
+  list: (portfolioId: string) =>
+    api.get(`/reports?portfolioId=${portfolioId}`),
   download: (reportId: string) =>
-    api.get(`/reports/${reportId}`),
+    api.get(`/reports/${reportId}`, { responseType: 'arraybuffer' }),
+  delete: (reportId: string) =>
+    api.delete(`/reports/${reportId}`),
 };
 
 export default api;

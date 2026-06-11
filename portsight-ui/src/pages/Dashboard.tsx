@@ -9,29 +9,11 @@ import {
 } from 'lucide-react';
 import {
   analyticsService, riskService,
-  portfolioService, transactionService
+  portfolioService, transactionService, holdingsService
 } from '../services/api';
 import './Dashboard.css';
 
-// ── Static placeholders (replaced in P3/P4) ──────────────────────────────────
-const PORTFOLIO_GROWTH = [
-  { month: 'Jan', value: 1000000 },
-  { month: 'Feb', value: 1042000 },
-  { month: 'Mar', value: 1021000 },
-  { month: 'Apr', value: 1085000 },
-  { month: 'May', value: 1130000 },
-  { month: 'Jun', value: 1245000 },
-];
-
-const ALLOCATION_DATA = [
-  { name: 'Technology', value: 45 },
-  { name: 'Financials', value: 22 },
-  { name: 'Healthcare', value: 15 },
-  { name: 'Bonds', value: 10 },
-  { name: 'ETFs', value: 8 },
-];
-
-const COLORS = ['#0055FF', '#6366F1', '#00C853', '#FF9500', '#A855F7'];
+const COLORS = ['#0055FF', '#6366F1', '#00C853', '#FF9500', '#A855F7', '#FF3B30', '#00BCD4', '#FFC107'];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Portfolio {
@@ -65,6 +47,17 @@ interface Transaction {
   createdAt: string;
 }
 
+interface GrowthPoint {
+  month: string;
+  date: string;
+  value: number;
+}
+
+interface AllocationSlice {
+  name: string;
+  value: number;
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatINR = (v: number) =>
   new Intl.NumberFormat('en-IN', {
@@ -85,6 +78,8 @@ export default function Dashboard() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [risk, setRisk] = useState<Risk | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [growthHistory, setGrowthHistory] = useState<GrowthPoint[]>([]);
+  const [allocationData, setAllocationData] = useState<AllocationSlice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,14 +98,15 @@ export default function Dashboard() {
       });
   }, []);
 
-  // Step 2 — when portfolio selected, fetch analytics + risk + transactions
+  // Step 2 — when portfolio selected, fetch all data
   useEffect(() => {
     if (!selectedId) return;
     setLoading(true);
     setError(null);
 
     const fetchAll = async () => {
-      // Analytics — CRITICAL: if this fails, show error
+
+      // Analytics — CRITICAL
       try {
         const aRes = await analyticsService.getPortfolioAnalytics(selectedId);
         setAnalytics(aRes.data.data);
@@ -120,7 +116,7 @@ export default function Dashboard() {
         return;
       }
 
-      // Transactions — non-critical: if fails, show empty list
+      // Transactions — non-critical
       try {
         const tRes = await transactionService.getByPortfolio(selectedId);
         const allTx: Transaction[] = tRes.data.data ?? [];
@@ -129,12 +125,56 @@ export default function Dashboard() {
         setTransactions([]);
       }
 
-      // Risk — non-critical: if fails (e.g. risk_metrics empty), show zeros
+      // Risk — non-critical
       try {
         const rRes = await riskService.getRiskMetrics(selectedId);
         setRisk(rRes.data.data);
       } catch {
-        setRisk(null); // UI already defaults to 0 via ?? 0 fallbacks
+        setRisk(null);
+      }
+
+      // Growth history from portfolio_snapshots — non-critical
+      try {
+        const gRes = await analyticsService.getGrowthHistory(selectedId);
+        const points: GrowthPoint[] = (gRes.data.data ?? []).map((p: any) => ({
+          month: p.month,
+          date: p.date,
+          value: Number(p.value),
+        }));
+        setGrowthHistory(points);
+      } catch {
+        setGrowthHistory([]);
+      }
+
+      // Asset Allocation from real holdings — non-critical
+      try {
+        const hRes = await holdingsService.getByPortfolio(selectedId);
+        const holdings: any[] = hRes.data.data ?? [];
+
+        // Group by sector, sum currentValue per sector
+        const sectorMap: Record<string, number> = {};
+        let total = 0;
+        for (const h of holdings) {
+          const sector: string = h.asset?.sector ?? 'Other';
+          const val = Number(h.currentValue ?? 0);
+          sectorMap[sector] = (sectorMap[sector] ?? 0) + val;
+          total += val;
+        }
+
+        // Convert to percentage slices, sorted descending
+        if (total > 0) {
+          const slices: AllocationSlice[] = Object.entries(sectorMap)
+            .map(([name, val]) => ({
+              name,
+              value: Math.round((val / total) * 100 * 10) / 10, // 1 decimal
+            }))
+            .sort((a, b) => b.value - a.value);
+          setAllocationData(slices);
+        } else {
+          setAllocationData([]);
+        }
+      } catch {
+        setAllocationData([]);
       }
 
       setLoading(false);
@@ -156,6 +196,20 @@ export default function Dashboard() {
   const var95 = risk?.var95 ?? 0;
 
   const selectedPortfolio = portfolios.find(p => p.id === selectedId);
+
+  // If snapshots exist use them; otherwise fall back to a single
+  // "current value" point so the chart always renders something
+  const chartData: GrowthPoint[] = growthHistory.length > 0
+    ? growthHistory
+    : (totalValue > 0
+      ? [{ month: 'Now', date: new Date().toISOString().split('T')[0], value: Number(totalValue) }]
+      : []);
+
+  const chartSubtitle = growthHistory.length > 1
+    ? `${growthHistory[0].month} – ${growthHistory[growthHistory.length - 1].month} (real data)`
+    : growthHistory.length === 1
+      ? 'Single snapshot — grows daily'
+      : 'No snapshot data yet';
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) {
@@ -227,10 +281,10 @@ export default function Dashboard() {
           </div>
           <div className="kpi-body">
             <div className="kpi-label">Total Portfolio Value</div>
-            <div className="kpi-value">{formatINR(totalValue)}</div>
+            <div className="kpi-value">{formatINR(Number(totalValue))}</div>
             <div className={`kpi-change ${isPositive ? 'kpi-change--up' : 'kpi-change--down'}`}>
               {isPositive ? <ArrowUpRight size={15} /> : <ArrowDownRight size={15} />}
-              {isPositive ? '+' : ''}{formatINR(gainLoss)} ({Number(returnPct).toFixed(2)}%)
+              {isPositive ? '+' : ''}{formatINR(Number(gainLoss))} ({Number(returnPct).toFixed(2)}%)
             </div>
           </div>
         </div>
@@ -241,7 +295,7 @@ export default function Dashboard() {
           </div>
           <div className="kpi-body">
             <div className="kpi-label">Invested Capital</div>
-            <div className="kpi-value">{formatINR(invested)}</div>
+            <div className="kpi-value">{formatINR(Number(invested))}</div>
             <div className="kpi-sub">Cost Basis</div>
           </div>
         </div>
@@ -277,7 +331,7 @@ export default function Dashboard() {
           <div className="chart-card-header">
             <div>
               <div className="chart-title">Portfolio Growth</div>
-              <div className="chart-subtitle">Simulated 6-month trend</div>
+              <div className="chart-subtitle">{chartSubtitle}</div>
             </div>
             <div className={`chart-badge ${isPositive ? 'chart-badge--up' : 'chart-badge--down'}`}>
               {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
@@ -285,7 +339,7 @@ export default function Dashboard() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={PORTFOLIO_GROWTH} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="valueGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#0055FF" stopOpacity={0.15} />
@@ -293,10 +347,40 @@ export default function Dashboard() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F5" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`} tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
-              <Tooltip formatter={(v) => formatINR(Number(v))} contentStyle={{ border: 'none', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontSize: '13px' }} />
-              <Area type="monotone" dataKey="value" stroke="#0055FF" strokeWidth={2.5} fill="url(#valueGradient)" dot={false} activeDot={{ r: 5, fill: '#0055FF' }} />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tickFormatter={(v) => `₹${(v / 100000).toFixed(1)}L`}
+                tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                formatter={(v) => formatINR(Number(v))}
+                labelFormatter={(label) => {
+                  const point = chartData.find(p => p.month === label);
+                  return point ? point.date : label;
+                }}
+                contentStyle={{
+                  border: 'none',
+                  borderRadius: '10px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                  fontSize: '13px'
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#0055FF"
+                strokeWidth={2.5}
+                fill="url(#valueGradient)"
+                dot={chartData.length <= 12}
+                activeDot={{ r: 5, fill: '#0055FF' }}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -305,18 +389,40 @@ export default function Dashboard() {
           <div className="chart-card-header">
             <div>
               <div className="chart-title">Asset Allocation</div>
-              <div className="chart-subtitle">By sector weight</div>
+              <div className="chart-subtitle">
+                {allocationData.length > 0 ? 'By sector weight (real holdings)' : 'Loading allocation...'}
+              </div>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
-              <Pie data={ALLOCATION_DATA} cx="50%" cy="50%" innerRadius={68} outerRadius={100} paddingAngle={3} dataKey="value">
-                {ALLOCATION_DATA.map((_, i) => (
+              <Pie
+                data={allocationData}
+                cx="50%"
+                cy="50%"
+                innerRadius={68}
+                outerRadius={100}
+                paddingAngle={3}
+                dataKey="value"
+              >
+                {allocationData.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v) => `${v}%`} contentStyle={{ border: 'none', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontSize: '13px' }} />
-              <Legend iconType="circle" iconSize={10} formatter={(v) => <span style={{ fontSize: 12, color: '#4B5563' }}>{v}</span>} />
+              <Tooltip
+                formatter={(v) => `${v}%`}
+                contentStyle={{
+                  border: 'none',
+                  borderRadius: '10px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                  fontSize: '13px'
+                }}
+              />
+              <Legend
+                iconType="circle"
+                iconSize={10}
+                formatter={(v) => <span style={{ fontSize: 12, color: '#4B5563' }}>{v}</span>}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>

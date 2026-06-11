@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Briefcase, Activity, Settings,
   Bell, Search, ActivityIcon, LogOut, Cpu, ChevronDown,
-  BarChart2, Copy, Layers, ShieldAlert, Scale
+  BarChart2, Copy, Layers, ShieldAlert, Scale, FileText
 } from 'lucide-react';
 import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
@@ -12,6 +12,7 @@ import RiskAnalyticsPage from './pages/RiskAnalyticsPage';
 import MarketPage from './pages/MarketPage';
 import TransactionsPage from './pages/TransactionsPage';
 import HoldingsPage from './pages/HoldingsPage';
+import ReportsPage from './pages/ReportsPage';
 import { marketService } from './services/api';
 import './App.css';
 
@@ -45,13 +46,13 @@ function getInitials(email: string): string {
 // ─── Nav config ───────────────────────────────────────────────────────────────
 type Tab =
   | 'dashboard' | 'portfolios' | 'analytics' | 'market'
-  | 'transactions' | 'holdings' | 'settings' | 'admin';
+  | 'transactions' | 'holdings' | 'reports' | 'settings' | 'admin';
 
 interface NavItem {
   id: Tab;
   label: string;
   icon: React.ReactNode;
-  roles: UserRole[]; // which roles can see this
+  roles: UserRole[];
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -92,10 +93,10 @@ const NAV_ITEMS: NavItem[] = [
     roles: ['ROLE_USER', 'ROLE_ANALYST', 'ROLE_ADMIN'],
   },
   {
-    id: 'analytics',
-    label: 'Stress Testing',
-    icon: <ShieldAlert size={20} />,
-    roles: ['ROLE_ANALYST', 'ROLE_ADMIN'], // hidden from ROLE_USER
+    id: 'reports',
+    label: 'Reports',
+    icon: <FileText size={20} />,
+    roles: ['ROLE_USER', 'ROLE_ANALYST', 'ROLE_ADMIN'],
   },
   {
     id: 'settings',
@@ -107,7 +108,7 @@ const NAV_ITEMS: NavItem[] = [
     id: 'admin',
     label: 'Administration',
     icon: <Scale size={20} />,
-    roles: ['ROLE_ADMIN'], // admin only
+    roles: ['ROLE_ADMIN'],
   },
 ];
 
@@ -118,6 +119,7 @@ const TAB_TITLES: Record<Tab, string> = {
   transactions: 'Transactions',
   holdings: 'Holdings',
   market: 'Market',
+  reports: 'Reports',
   settings: 'Settings',
   admin: 'Administration',
 };
@@ -130,7 +132,6 @@ export default function App() {
   const [advancingDay, setAdvancingDay] = useState(false);
   const [dayCount, setDayCount] = useState(0);
 
-  // Decode role + email from JWT
   const decoded = token ? decodeJwt(token) : null;
   const email: string = decoded?.email ?? '';
   const authorities: string[] = decoded?.authorities ?? [];
@@ -167,7 +168,6 @@ export default function App() {
 
   if (!token) return <LoginPage onLogin={handleLogin} />;
 
-  // Filter nav items by role
   const visibleNav = NAV_ITEMS.filter(item => item.roles.includes(role));
 
   return (
@@ -211,7 +211,7 @@ export default function App() {
           </button>
         </div>
 
-        {/* User footer — now dynamic */}
+        {/* User footer */}
         <div className="sidebar-footer">
           <div className="user-info">
             <div className="avatar-sm">{getInitials(email)}</div>
@@ -254,6 +254,7 @@ export default function App() {
           {activeTab === 'market' && <MarketPage />}
           {activeTab === 'transactions' && <TransactionsPage />}
           {activeTab === 'holdings' && <HoldingsPage />}
+          {activeTab === 'reports' && <ReportsPage />}
           {activeTab === 'settings' && <SettingsPage />}
           {activeTab === 'admin' && (
             <div style={{ padding: '2rem' }}>
