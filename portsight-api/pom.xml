@@ -286,6 +286,7 @@
                     </systemPropertyVariables>
                     <excludes>
                         <exclude>**/*IntegrationTest.java</exclude>
+                        <exclude>**/AuthControllerIntegrationTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>
