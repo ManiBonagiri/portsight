@@ -14,6 +14,7 @@ import com.portsight.api.domains.transaction.enums.TransactionType;
 import com.portsight.api.domains.transaction.mapper.TransactionMapper;
 import com.portsight.api.domains.transaction.repository.TransactionRepository;
 import com.portsight.api.shared.exception.ResourceNotFoundException;
+import com.portsight.api.shared.outbox.OutboxEventHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -47,6 +48,8 @@ class TransactionServiceTest {
     private AssetRepository assetRepository;
     @Mock
     private AssetMapper assetMapper;
+    @Mock
+    private OutboxEventHelper outboxEventHelper;
 
     @InjectMocks
     private TransactionService transactionService;

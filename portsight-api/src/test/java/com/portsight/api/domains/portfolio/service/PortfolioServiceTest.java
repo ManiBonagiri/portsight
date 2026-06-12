@@ -38,6 +38,9 @@ class PortfolioServiceTest {
     @Mock
     private PortfolioMapper portfolioMapper;
 
+    @Mock
+    private com.portsight.api.shared.outbox.OutboxEventHelper outboxEventHelper;
+
     @InjectMocks
     private PortfolioServiceImpl portfolioService;
 
@@ -107,6 +110,10 @@ class PortfolioServiceTest {
             request.setBenchmark("SIM_NIFTY");
 
             Portfolio blankPortfolio = new Portfolio();
+            blankPortfolio.setId(UUID.randomUUID());
+            blankPortfolio.setPortfolioName("New Portfolio");
+            blankPortfolio.setRiskProfile(RiskProfile.AGGRESSIVE);
+            blankPortfolio.setBenchmark("SIM_NIFTY");
             when(portfolioMapper.toEntity(request)).thenReturn(blankPortfolio);
             when(portfolioRepository.save(any(Portfolio.class))).thenReturn(blankPortfolio);
             when(portfolioMapper.toResponse(blankPortfolio)).thenReturn(portfolioResponse);

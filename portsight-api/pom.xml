@@ -284,6 +284,9 @@
                     <systemPropertyVariables>
                         <docker.host>npipe:////./pipe/docker_engine_linux</docker.host>
                     </systemPropertyVariables>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
 

@@ -336,7 +336,7 @@ export default function RiskAnalyticsPage() {
                   tickFormatter={(v) => `${v}%`}
                 />
                 <Tooltip
-                  formatter={(v: number) => [`${v}%`, 'Monthly Return']}
+                  formatter={(v) => [`${v}%`, 'Monthly Return']}
                   contentStyle={{ border: 'none', borderRadius: '10px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontSize: '13px' }}
                 />
                 <ReferenceLine y={0} stroke="#E5E7EB" strokeWidth={1} />
