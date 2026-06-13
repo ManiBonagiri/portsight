@@ -1,77 +1,204 @@
 /* ========== Settings Page ========== */
 .settings-page {
   padding: 2rem;
-  max-width: 640px;
+  max-width: 680px;
   margin: 0 auto;
-  border-radius: 16px;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1.25rem;
 }
 
-.setting-item {
+/* ── Card ─────────────────────────────────────────────────────── */
+.settings-card {
+  background: var(--surface, #1e1e2e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent, #6c63ff);
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  background: rgba(108, 99, 255, 0.04);
+}
+
+/* ── Setting Row ──────────────────────────────────────────────── */
+.setting-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 0;
-  border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.06));
 }
 
-.setting-item:last-child {
+.setting-row:last-child {
   border-bottom: none;
 }
 
-.setting-label {
+.setting-info {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.95rem;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.setting-title {
+  font-size: 0.9rem;
+  font-weight: 500;
   color: var(--text, #e0e0e0);
 }
 
-.icon-light {
-  color: #f59e0b;
+.setting-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted, #888);
+  max-width: 420px;
+  line-height: 1.4;
 }
 
-.icon-dark {
-  color: #818cf8;
+.settings-muted-icon {
+  color: var(--text-muted, #666);
 }
 
-.btn-toggle {
-  padding: 0.45rem 1.1rem;
-  border-radius: 8px;
-  border: 1px solid var(--accent, #6c63ff);
-  background: transparent;
-  color: var(--accent, #6c63ff);
-  font-size: 0.85rem;
-  cursor: pointer;
+/* ── Profile Card ─────────────────────────────────────────────── */
+.profile-row {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  transition: background 0.15s, color 0.15s;
+  gap: 1.1rem;
+  padding: 1.25rem;
 }
 
-.btn-toggle:hover {
-  background: var(--accent, #6c63ff);
+.profile-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent, #6c63ff), #a78bfa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
   color: #fff;
+  flex-shrink: 0;
 }
 
-.btn-toggle.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.btn-danger {
-  padding: 0.45rem 1.1rem;
-  border-radius: 8px;
+.profile-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text, #e0e0e0);
+  text-transform: capitalize;
+}
+
+.profile-email {
+  font-size: 0.8rem;
+  color: var(--text-muted, #888);
+}
+
+/* ── Role Badge ───────────────────────────────────────────────── */
+.role-badge {
+  display: inline-block;
+  margin-top: 0.2rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.role-badge--user {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.role-badge--analyst {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+.role-badge--admin {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+/* ── Toggle Switch ────────────────────────────────────────────── */
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
   border: none;
+  background: var(--border, rgba(255, 255, 255, 0.12));
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.toggle-switch--on {
+  background: var(--accent, #6c63ff);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  transition: transform 0.2s;
+}
+
+.toggle-switch--on .toggle-thumb {
+  transform: translateX(20px);
+  color: var(--accent, #6c63ff);
+}
+
+/* ── Clear Button ─────────────────────────────────────────────── */
+.btn-clear {
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #ef4444;
+  background: transparent;
+  color: #ef4444;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.btn-clear:hover:not(:disabled) {
   background: #ef4444;
   color: #fff;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.15s;
 }
 
-.btn-danger:hover {
-  background: #dc2626;
+.btn-clear--done {
+  border-color: #4ade80;
+  color: #4ade80;
+  cursor: default;
+}
+
+/* ── Version Footer ───────────────────────────────────────────── */
+.settings-version {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-muted, #555);
+  padding: 0.5rem 0 1rem;
 }

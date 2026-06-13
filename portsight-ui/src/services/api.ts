@@ -116,4 +116,13 @@ export const reportService = {
     api.delete(`/reports/${reportId}`),
 };
 
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+export const adminService = {
+  getUsers: () => api.get('/admin/users'),
+  getAuditLogs: (page: number, size: number, search?: string) =>
+    api.get('/admin/audit-logs', { params: { page, size, search } }),
+  getSystemHealth: () => api.get('/admin/system-health'),
+};
+
 export default api;

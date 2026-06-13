@@ -14,6 +14,7 @@ import TransactionsPage from './pages/TransactionsPage';
 import HoldingsPage from './pages/HoldingsPage';
 import ReportsPage from './pages/ReportsPage';
 import { marketService } from './services/api';
+import AdminPage from './pages/AdminPage';
 import './App.css';
 
 // ─── JWT decode helper ────────────────────────────────────────────────────────
@@ -256,14 +257,7 @@ export default function App() {
           {activeTab === 'holdings' && <HoldingsPage />}
           {activeTab === 'reports' && <ReportsPage />}
           {activeTab === 'settings' && <SettingsPage />}
-          {activeTab === 'admin' && (
-            <div style={{ padding: '2rem' }}>
-              <h2>Administration Console</h2>
-              <p style={{ color: '#888', marginTop: '0.5rem' }}>
-                User management, system config, and audit logs — coming soon.
-              </p>
-            </div>
-          )}
+          {activeTab === 'admin' && <AdminPage />}
         </div>
       </main>
     </div>
